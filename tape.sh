@@ -1,4 +1,9 @@
 #!/bin/bash
+# 2023 Dimitar Angelov <funkamateur@gmail.com>
+# github.com/izne 
+# 
+# This one requires:
+# bash, dialog, tar, mt, lsscsi, dmesg, sudo
 
 
 DIALOG_CANCEL=1
@@ -7,7 +12,7 @@ HEIGHT=0
 WIDTH=0
 CWD=`pwd`
 
-#select device
+# hardcode your devices
 TAPE_DEVICE=`dialog --radiolist "Select device ..." 0 0 2 \
   /dev/nst0 "HP C7438A (DAT72)" on \
   /dev/nst1 "CERTANCE ULTRIUM 2 (LTO-2)" off \
@@ -26,13 +31,13 @@ while true; do
   exec 3>&1
   CURRENT_POSITION=`mt -f $TAPE_DEVICE tell`
   selection=$(dialog \
-    --backtitle "Tape Drive Control: $TAPE_DEVICE" \
+    --backtitle "Tape Tools: $TAPE_DEVICE" \
     --title "Tape $CURRENT_POSITION" \
     --clear \
     --cancel-label "Exit" \
     --menu "Select:" $HEIGHT $WIDTH 9 \
-    "1" "Controller" \
-    "2" "Device" \
+    "1" "Controller info" \
+    "2" "Tape device info" \
     "3" "List" \
     "4" "Rewind" \
     "5" "Backup" \
@@ -44,14 +49,26 @@ while true; do
   exec 3>&-
   case $exit_status in
     $DIALOG_CANCEL)
-      clear
-      echo "Program terminated."
-      exit
+	dialog --yesno "Confirm: Exit Tape Tools?" 0 0
+	antwort=$?
+	dialog --clear
+	if [ $antwort = 0 ]
+	then
+		clear
+		echo "Program terminated."
+		exit
+	fi
       ;;
     $DIALOG_ESC)
+	dialog --yesno "Confirm: Exit Tape Tools?" 0 0
+	antwort=$?
+	dialog --clear
+	if [ $antwort = 0 ]
+	then
       clear
       echo "Program aborted." >&2
       exit 1
+	fi
       ;;
   esac
   case $selection in
@@ -68,12 +85,15 @@ while true; do
 	--prgbox "tar tzf $TAPE_DEVICE ; mt -f $TAPE_DEVICE tell" 30 98
       ;;
     4 )
-       mt -f $TAPE_DEVICE rewind | dialog --title "Rewinding ..." --progressbox 0 0
+       dialog --infobox "Rewinding tape..." 10 30
+	   mt -f $TAPE_DEVICE rewind
+	   dialog --clear
       ;;
     5 )
       BACKUP_PATH=`dialog --dselect $CWD 5 5   3>&1 1>&2 2>&3`
+	   NUM_FILES=`find $BACKUP_PATH -type f | wc -l`
         dialog --title "Backup $BACKUP_PATH to $TAPE_DEVICE" \
-        --prgbox "tar czvf $TAPE_DEVICE $BACKUP_PATH ; mt -f $TAPE_DEVICE tell" 30 90
+        --prgbox "echo 'Files to archive: ' $NUM_FILES; tar czvf $TAPE_DEVICE $BACKUP_PATH ; mt -f $TAPE_DEVICE tell" 30 90
       ;;
     6 )
       RESTORE_PATH=`dialog --dselect / 5 5   3>&1 1>&2 2>&3`
