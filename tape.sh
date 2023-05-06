@@ -12,7 +12,7 @@ HEIGHT=0
 WIDTH=0
 CWD=`pwd`
 
-# hardcode your devices
+# hardcode your devices, todo: make dynamic
 TAPE_DEVICE=`dialog --radiolist "Select device ..." 0 0 2 \
   /dev/nst0 "HP C7438A (DAT72)" on \
   /dev/nst1 "CERTANCE ULTRIUM 2 (LTO-2)" off \
@@ -35,15 +35,14 @@ while true; do
     --title "Tape $CURRENT_POSITION" \
     --clear \
     --cancel-label "Exit" \
-    --menu "Select:" $HEIGHT $WIDTH 9 \
-    "1" "Controller info" \
-    "2" "Tape device info" \
-    "3" "List" \
-    "4" "Rewind" \
-    "5" "Backup" \
-    "6" "Restore" \
-    "7" "Eject" \
-    "8" "About" \
+    --menu "Select:" $HEIGHT $WIDTH 7 \
+    "1" "Device Info" \
+    "2" "List" \
+    "3" "Rewind" \
+    "4" "Backup" \
+    "5" "Restore" \
+    "6" "Eject" \
+    "7" "About" \
     2>&1 1>&3)
   exit_status=$?
   exec 3>&-
@@ -73,38 +72,37 @@ while true; do
   esac
   case $selection in
     1 )
-      result=$(dmesg | grep scsi; echo; lsscsi | grep tape )
-      display_result "SCSI Controller"
+      result=$(lsscsi | grep tape; echo; mt -f $TAPE_DEVICE status  )
+      display_result "SCSI Information"
       ;;
     2 )
-      result=$(dmesg | grep $TAPE_DEVICE; mt -f $TAPE_DEVICE status )
-      display_result "Tape Device"
+		dialog --title "Contents of $TAPE_DEVICE $CURRENT_POSITION" \
+		--prgbox "tar tzf $TAPE_DEVICE ; mt -f $TAPE_DEVICE tell" 30 98
       ;;
     3 )
-	dialog --title "Contents of $TAPE_DEVICE $CURRENT_POSITION" \
-	--prgbox "tar tzf $TAPE_DEVICE ; mt -f $TAPE_DEVICE tell" 30 98
+		dialog --infobox "Rewinding tape..." 5 30
+		mt -f $TAPE_DEVICE rewind
+		dialog --clear
       ;;
     4 )
-       dialog --infobox "Rewinding tape..." 10 30
-	   mt -f $TAPE_DEVICE rewind
-	   dialog --clear
-      ;;
-    5 )
       BACKUP_PATH=`dialog --dselect $CWD 5 5   3>&1 1>&2 2>&3`
 	   NUM_FILES=`find $BACKUP_PATH -type f | wc -l`
         dialog --title "Backup $BACKUP_PATH to $TAPE_DEVICE" \
         --prgbox "echo 'Files to archive: ' $NUM_FILES; tar czvf $TAPE_DEVICE $BACKUP_PATH ; mt -f $TAPE_DEVICE tell" 30 90
       ;;
-    6 )
+    5 )
       RESTORE_PATH=`dialog --dselect / 5 5   3>&1 1>&2 2>&3`
         dialog --title "Restore from $TAPE_DEVICE to $RESTORE_PATH" \
         --prgbox "tar xzf $TAPE_DEVICE $BACKUP_PATH ; mt -f $TAPE_DEVICE tell" 30 90
       ;;
-    7 )
-       mt -f $TAPE_DEVICE eject | dialog --title "Ejecting ..." --progressbox 0 0
+    6 )
+		dialog --infobox "Ejecting cassette..." 5 30
+		mt -f $TAPE_DEVICE eject
+		dialog --clear
+		exit
       ;;
-    8 )
-      result=$(echo; echo "This system has the following versions:"; echo; mt --version | head -n 1; tar --version | head -n 1; echo -n "dialog "; dialog --version ; bash --version | head -n 1 )
+    7 )
+      result=$(echo; echo "This system has:"; echo; mt --version | head -n 1; tar --version | head -n 1; echo -n "dialog "; dialog --version ; bash --version | head -n 1 )
       display_result "About"
       ;;
   esac
