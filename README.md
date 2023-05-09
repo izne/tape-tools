@@ -1,7 +1,6 @@
 # tape-tools
-Set of scripts for using tape archive drives on Unix
+A script that consolidates a few command line tools for using tape archive drives on Unix(like)
 
 
-
-https://user-images.githubusercontent.com/315243/236583360-ae23ded2-8178-48dd-8ab3-9ca4aeda9ecd.mp4
+https://github.com/izne/tape-tools/assets/315243/c1def37c-9c05-4004-a148-23cd19f536b1
 
