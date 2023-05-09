@@ -76,7 +76,7 @@ while true; do
       ;;
     2 )
 		dialog --title "Contents of $TAPE_DEVICE $CURRENT_POSITION" \
-		--prgbox "tar tzf $TAPE_DEVICE ; mt -f $TAPE_DEVICE tell" 30 98
+		--prgbox "tar tf $TAPE_DEVICE ; mt -f $TAPE_DEVICE tell" 30 98
       ;;
     3 )
 		dialog --infobox "Rewinding tape..." 5 30
@@ -89,7 +89,7 @@ while true; do
      #   dialog --title "Backup $BACKUP_PATH to $TAPE_DEVICE" \
      #   --prgbox "echo 'Files to archive: ' $NUM_FILES; tar czvf $TAPE_DEVICE $BACKUP_PATH ; mt -f $TAPE_DEVICE tell" 30 90
      # | dialog --gauge "Please wait" 10 70 0;
-     (tar czf - $BACKUP_PATH \
+     (tar cf - $BACKUP_PATH \
 	  | pv -n -s $(du -sb $BACKUP_PATH | awk '{print $1}') \
 	  | dd of=$TAPE_DEVICE bs=8k \
 	 ) 2>&1 | dialog --gauge "Backup $BACKUP_PATH to $TAPE_DEVICE ..." 7 70
@@ -97,7 +97,7 @@ while true; do
     5 )
       RESTORE_PATH=`dialog --dselect / 5 5   3>&1 1>&2 2>&3`
         dialog --title "Restore from $TAPE_DEVICE to $RESTORE_PATH" \
-        --prgbox "tar xzf $TAPE_DEVICE $BACKUP_PATH ; mt -f $TAPE_DEVICE tell" 30 90
+        --prgbox "tar xf $TAPE_DEVICE $BACKUP_PATH ; mt -f $TAPE_DEVICE tell" 30 90
       ;;
     6 )
 		dialog --infobox "Ejecting cassette..." 5 30
