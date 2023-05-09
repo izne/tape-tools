@@ -25,7 +25,6 @@ display_result() {
 }
 
 
-
 # Main
 while true; do
   exec 3>&1
@@ -85,11 +84,16 @@ while true; do
 		dialog --clear
       ;;
     4 )
-      BACKUP_PATH=`dialog --dselect $CWD 5 5   3>&1 1>&2 2>&3`
-	   NUM_FILES=`find $BACKUP_PATH -type f | wc -l`
-        dialog --title "Backup $BACKUP_PATH to $TAPE_DEVICE" \
-        --prgbox "echo 'Files to archive: ' $NUM_FILES; tar czvf $TAPE_DEVICE $BACKUP_PATH ; mt -f $TAPE_DEVICE tell" 30 90
-      ;;
+     BACKUP_PATH=`dialog --dselect $CWD 5 5   3>&1 1>&2 2>&3`
+	 TOTAL_FILES=`find $BACKUP_PATH -type f | wc -l`
+     #   dialog --title "Backup $BACKUP_PATH to $TAPE_DEVICE" \
+     #   --prgbox "echo 'Files to archive: ' $NUM_FILES; tar czvf $TAPE_DEVICE $BACKUP_PATH ; mt -f $TAPE_DEVICE tell" 30 90
+     # | dialog --gauge "Please wait" 10 70 0;
+     (tar czf - $BACKUP_PATH \
+	  | pv -n -s $(du -sb $BACKUP_PATH | awk '{print $1}') \
+	  | dd of=$TAPE_DEVICE bs=8k \
+	 ) 2>&1 | dialog --gauge "Backup $BACKUP_PATH to $TAPE_DEVICE ..." 7 70
+	  ;;
     5 )
       RESTORE_PATH=`dialog --dselect / 5 5   3>&1 1>&2 2>&3`
         dialog --title "Restore from $TAPE_DEVICE to $RESTORE_PATH" \
